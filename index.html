@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>تقرير مخزن الطوبة - Al-Tuba Oil Depot</title>
+<style>
+  :root{ --green:#25D366; --green-dark:#128C7E; }
+  *{box-sizing:border-box; font-family:"Segoe UI",Tahoma,Arial,sans-serif;}
+  body{
+    margin:0; min-height:100vh; padding:16px;
+    background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    display:flex; justify-content:center; align-items:flex-start;
+  }
+  .card{
+    width:100%; max-width:640px; background:#fff; border-radius:18px;
+    box-shadow:0 18px 45px rgba(0,0,0,.4); overflow:hidden;
+  }
+  .head{
+    background:linear-gradient(135deg,#0b3d2e,#128C7E 50%,#25D366);
+    color:#fff; padding:18px 20px; text-align:center; position:relative; overflow:hidden;
+  }
+  .head::before{
+    content:''; position:absolute; width:180px; height:180px;
+    background:rgba(255,255,255,.08); border-radius:50%; top:-80px; left:-50px;
+  }
+  .head::after{
+    content:''; position:absolute; width:120px; height:120px;
+    background:rgba(255,255,255,.06); border-radius:50%; bottom:-70px; right:-30px;
+  }
+  .head h1{margin:0; font-size:19px; letter-spacing:.3px; position:relative; z-index:1;}
+  .head p{margin:4px 0 0; font-size:12px; opacity:.9; direction:ltr; position:relative; z-index:1;}
+
+  .body{padding:16px 18px 20px;}
+
+  .lock-banner{
+    display:none;
+    background:linear-gradient(135deg,#7f1d1d,#dc2626);
+    color:#fff; text-align:center; font-weight:800; font-size:13px;
+    padding:11px; border-radius:12px; margin-bottom:12px;
+    box-shadow:0 6px 18px rgba(220,38,38,.35);
+  }
+  body.locked .lock-banner{display:block;}
+  body.locked .canvas-wrap{opacity:.5;}
+
+  .clockbox{
+    display:grid; grid-template-columns:1fr 1fr auto; gap:8px;
+    align-items:end; margin-bottom:14px;
+  }
+  .clock-item{display:flex; flex-direction:column; gap:4px;}
+  .clock-lbl{font-size:11px; font-weight:800; color:#64748b; letter-spacing:.6px;}
+  .clock-item input{
+    width:100%; padding:8px 8px; border:1.5px solid #d6dde3; border-radius:10px;
+    font-size:14px; background:#f8fafc; text-align:center; color:#0f172a;
+  }
+  .btn-now{
+    padding:9px 12px; border:none; border-radius:10px; cursor:pointer;
+    background:#e2e8f0; color:#334155; font-size:12px; font-weight:800;
+  }
+  .btn-now:active{transform:scale(.95);}
+
+  .grid{
+    display:grid; grid-template-columns:66px 1fr 12px 1fr 52px;
+    gap:7px; align-items:center;
+  }
+  .head-row{margin-bottom:6px;}
+  .head-row span{
+    font-size:11px; font-weight:800; color:#94a3b8;
+    text-align:center; letter-spacing:.6px;
+  }
+  .head-row span:first-child{text-align:right;}
+
+  .row{margin-bottom:8px;}
+  .row label{font-weight:800; font-size:13.5px; color:#1e293b; direction:ltr; text-align:left;}
+  .slash{text-align:center; color:#cbd5e1; font-weight:800;}
+
+  input[type=number]{
+    width:100%; padding:10px 6px; border:1.5px solid #d6dde3; border-radius:10px;
+    font-size:15px; font-weight:700; text-align:center; background:#f8fafc;
+    color:#0f172a; transition:.15s;
+  }
+  input[type=number]:focus{
+    outline:none; border-color:var(--green); background:#fff;
+    box-shadow:0 0 0 3px rgba(37,211,102,.18);
+  }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+  input[type=number]{-moz-appearance:textfield;}
+
+  /* ===== أسهم الاتجاه ===== */
+  .arrows{display:flex; gap:3px; justify-content:center;}
+  .arr{
+    width:23px; height:23px; border-radius:7px; border:1.5px solid #cbd5e1;
+    background:#f8fafc; font-size:9px; line-height:1; cursor:pointer; padding:0;
+    display:flex; align-items:center; justify-content:center; transition:.15s;
+    color:#94a3b8; font-weight:900;
+  }
+  .arr.up:hover{border-color:#dc2626; color:#dc2626; background:#fef2f2;}
+  .arr.down:hover{border-color:#2563eb; color:#2563eb; background:#eff6ff;}
+  .arr.up.active{background:#dc2626; border-color:#dc2626; color:#fff; box-shadow:0 3px 8px rgba(220,38,38,.4);}
+  .arr.down.active{background:#2563eb; border-color:#2563eb; color:#fff; box-shadow:0 3px 8px rgba(37,99,235,.4);}
+  .arr.up.active:hover{color:#fff;}
+  .arr.down.active:hover{color:#fff;}
+
+  .total-row{
+    background:#eef7f1; border:1.5px solid #cdead9; border-radius:12px;
+    padding:10px 10px; margin-top:10px;
+  }
+  .total-row label{color:#0f5132; font-weight:800; font-size:14px;}
+  .total-row span{text-align:center; font-weight:900; font-size:16px; color:#0f5132;}
+  .total-row span:last-of-type{color:#0369a1;}
+
+  .canvas-wrap{
+    margin:16px 0 12px; border-radius:14px; overflow:hidden;
+    box-shadow:0 12px 35px rgba(15,32,39,.18); background:#fff; line-height:0;
+    transition:.25s;
+  }
+  .canvas-wrap canvas{display:block; width:100%; height:auto;}
+
+  .phone-row{
+    display:flex; align-items:center; gap:8px; margin-bottom:12px;
+    border:1.5px solid #d6dde3; border-radius:12px; padding:4px 12px; background:#f8fafc;
+  }
+  .phone-row span{font-size:18px;}
+  .phone-row input{
+    flex:1; border:none; background:transparent; padding:10px 0;
+    font-size:14px; outline:none; direction:ltr; font-weight:600;
+  }
+
+  .btn{
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    width:100%; padding:15px; border:none; border-radius:13px;
+    font-size:16px; font-weight:800; cursor:pointer; transition:.18s;
+    font-family:inherit;
+  }
+  .btn:disabled{opacity:.45; cursor:not-allowed; filter:grayscale(.35);}
+  .btn-wa{
+    background:linear-gradient(135deg,#25D366,#128C7E); color:#fff;
+    box-shadow:0 10px 24px rgba(37,211,102,.4);
+  }
+  .btn-wa:active:not(:disabled){transform:scale(.98);}
+  .btn-row{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:9px;}
+  .btn-sec{background:#eef2f6; color:#334155; font-size:14px; padding:13px;}
+  .btn-sec:active:not(:disabled){background:#e2e8f0;}
+
+  .btn-lock{
+    background:linear-gradient(135deg,#334155,#0f172a); color:#fff;
+    margin-top:9px; font-size:14px; padding:13px;
+  }
+  .btn-lock.active-lock{background:linear-gradient(135deg,#b91c1c,#7f1d1d);}
+
+  .note{font-size:11.5px; color:#94a3b8; text-align:center; margin-top:12px; line-height:1.7;}
+
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:#0f172a; color:#fff; padding:11px 22px; border-radius:30px;
+    font-size:13px; opacity:0; pointer-events:none; transition:.3s; z-index:99;
+    box-shadow:0 10px 30px rgba(0,0,0,.3); font-weight:600;
+    max-width:90vw; text-align:center;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="head">
+    <h1>تقرير الإرسال — مخزن الطوبة</h1>
+    <p>Al-Tuba Oil Depot</p>
+  </div>
+
+  <div class="body">
+
+    <!-- تنبيه النظام المعطل -->
+    <div class="lock-banner">🔒 النظام معطل حالياً — أدخل كلمة المرور للتفعيل</div>
+
+    <!-- الوقت والتاريخ -->
+    <div class="clockbox">
+      <div class="clock-item">
+        <span class="clock-lbl">TIME</span>
+        <input type="time" id="timeInput">
+      </div>
+      <div class="clock-item">
+        <span class="clock-lbl">DATE</span>
+        <input type="date" id="dateInput">
+      </div>
+      <button class="btn-now" id="btnNow" title="إرجاع التحديث التلقائي">⟳ الآن</button>
+    </div>
+
+    <!-- رأس الأعمدة -->
+    <div class="grid head-row">
+      <span>ITEM</span><span>AVAIL</span><span></span><span>FREE</span><span>TREND</span>
+    </div>
+
+    <!-- الصفوف -->
+    <div class="grid row">
+      <label for="tx">Tuba</label>
+      <input id="tx" type="number" step="any" inputmode="decimal" placeholder="0">
+      <span class="slash">/</span>
+      <input id="tv" type="number" step="any" inputmode="decimal" placeholder="0">
+      <div class="arrows" data-key="tuba">
+        <button type="button" class="arr up"   data-dir="up"   title="صعود">▲</button>
+        <button type="button" class="arr down" data-dir="down" title="نزول">▼</button>
+      </div>
+    </div>
+
+    <div class="grid row">
+      <label for="px">PS.1</label>
+      <input id="px" type="number" step="any" inputmode="decimal" placeholder="0">
+      <span class="slash">/</span>
+      <input id="pv" type="number" step="any" inputmode="decimal" placeholder="0">
+      <div class="arrows" data-key="ps1">
+        <button type="button" class="arr up"   data-dir="up"   title="صعود">▲</button>
+        <button type="button" class="arr down" data-dir="down" title="نزول">▼</button>
+      </div>
+    </div>
+
+    <div class="grid row">
+      <label for="z1x">zub.1</label>
+      <input id="z1x" type="number" step="any" inputmode="decimal" placeholder="0">
+      <span class="slash">/</span>
+      <input id="z1v" type="number" step="any" inputmode="decimal" placeholder="0">
+      <div class="arrows" data-key="zub1">
+        <button type="button" class="arr up"   data-dir="up"   title="صعود">▲</button>
+        <button type="button" class="arr down" data-dir="down" title="نزول">▼</button>
+      </div>
+    </div>
+
+    <div class="grid row">
+      <label for="z2x">zub.2</label>
+      <input id="z2x" type="number" step="any" inputmode="decimal" placeholder="0">
+      <span class="slash">/</span>
+      <input id="z2v" type="number" step="any" inputmode="decimal" placeholder="0">
+      <div class="arrows" data-key="zub2">
+        <button type="button" class="arr up"   data-dir="up"   title="صعود">▲</button>
+        <button type="button" class="arr down" data-dir="down" title="نزول">▼</button>
+      </div>
+    </div>
+
+    <!-- المجموع -->
+    <div class="grid total-row">
+      <label>total</label>
+      <span id="totalX">0</span>
+      <span class="slash">/</span>
+      <span id="totalV">0</span>
+      <div class="arrows" data-key="total">
+        <button type="button" class="arr up"   data-dir="up"   title="صعود">▲</button>
+        <button type="button" class="arr down" data-dir="down" title="نزول">▼</button>
+      </div>
+    </div>
+
+    <!-- معاينة الصورة -->
+    <div class="canvas-wrap">
+      <canvas id="reportCanvas"></canvas>
+    </div>
+
+    <!-- رقم الواتساب -->
+    <div class="phone-row">
+      <span>📱</span>
+      <input type="tel" id="phone" placeholder="رقم واتساب المستلم (اتركه فارغاً للاختيار)">
+    </div>
+
+    <!-- زر الإرسال -->
+    <button class="btn btn-wa" id="btnSend">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+      </svg>
+      إرسال الصورة عبر واتساب
+    </button>
+
+    <div class="btn-row">
+      <button class="btn btn-sec" id="btnDownload">⬇ تنزيل الصورة</button>
+      <button class="btn btn-sec" id="btnClear">🗑 مسح الكل</button>
+    </div>
+
+    <button class="btn btn-lock" id="btnLock">🔒 تعطيل النظام</button>
+
+    <p class="note">يتم إرسال الصورة فقط بدون أي نص مرفق.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   إعدادات عامة
+============================================================ */
+const PASSWORD = 'osama';   // ← كلمة مرور تعطيل/تفعيل النظام
+
+const $ = id => document.getElementById(id);
+
+const FIELDS = [
+  { x: 'tx',  v: 'tv',  key: 'tuba' },
+  { x: 'px',  v: 'pv',  key: 'ps1'  },
+  { x: 'z1x', v: 'z1v', key: 'zub1' },
+  { x: 'z2x', v: 'z2v', key: 'zub2' }
+];
+
+let autoTime = true;
+let systemDisabled = false;
+
+/* اتجاه كل صف: 'up' (أحمر) أو 'down' (أزرق) أو null */
+const trends = {
+  tuba: null,
+  ps1: null,
+  zub1: null,
+  zub2: null,
+  total: null
+};
+
+const COLOR_UP   = '#dc2626';   // أحمر
+const COLOR_DOWN = '#2563eb';   // أزرق
+
+/* ============================================================
+   أدوات مساعدة
+============================================================ */
+const pad = n => String(n).padStart(2, '0');
+
+function num(id){
+  const el = $(id);
+  if (!el || el.value === '') return 0;
+  const n = parseFloat(el.value);
+  return isNaN(n) ? 0 : n;
+}
+
+function fmt(n){
+  const r = Math.round(n * 100) / 100;
+  return r.toLocaleString('en-US', { maximumFractionDigits: 2 });
+}
+
+function totals(){
+  let s = 0, d = 0;
+  FIELDS.forEach(f => { s += num(f.x); d += num(f.v); });
+  return { s, d };
+}
+
+function getTimeStr(){ return $('timeInput').value || '--:--'; }
+function getDateStr(){
+  const v = $('dateInput').value;
+  return v ? v.split('-').reverse().join('/') : '--/--/----';
+}
+
+/* ============================================================
+   الوقت والتاريخ
+============================================================ */
+function tick(){
+  if (!autoTime) return;
+  const d = new Date();
+  $('timeInput').value = pad(d.getHours()) + ':' + pad(d.getMinutes());
+  $('dateInput').value = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+  scheduleDraw();
+}
+
+$('timeInput').addEventListener('input', () => { autoTime = false; scheduleDraw(); });
+$('dateInput').addEventListener('input', () => { autoTime = false; scheduleDraw(); });
+$('btnNow').addEventListener('click', () => {
+  autoTime = true;
+  tick();
+  toast('تم إرجاع التحديث التلقائي ✓');
+});
+
+/* ============================================================
+   أسهم الاتجاه (Trend)
+============================================================ */
+function initArrows(){
+  document.querySelectorAll('.arrows').forEach(group => {
+    const key = group.dataset.key;
+    group.querySelectorAll('.arr').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (systemDisabled) return;
+        const dir = btn.dataset.dir;
+        trends[key] = (trends[key] === dir) ? null : dir;
+        updateArrowsUI();
+        scheduleDraw();
+      });
+    });
+  });
+}
+
+function updateArrowsUI(){
+  document.querySelectorAll('.arrows').forEach(group => {
+    const key = group.dataset.key;
+    group.querySelectorAll('.arr').forEach(btn => {
+      btn.classList.toggle('active', trends[key] === btn.dataset.dir);
+    });
+  });
+}
+
+/* ============================================================
+   أدوات الرسم على Canvas
+============================================================ */
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function roundRectTop(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h);
+  ctx.lineTo(x, y + h);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+function roundRectBottom(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + w, y);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y);
+  ctx.closePath();
+}
+
+/* سهم مثلث صغير */
+function drawTrendArrow(ctx, cx, cy, size, dir, color){
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  if (dir === 'up'){
+    ctx.moveTo(cx, cy - size);
+    ctx.lineTo(cx - size * 0.85, cy + size * 0.65);
+    ctx.lineTo(cx + size * 0.85, cy + size * 0.65);
+  } else {
+    ctx.moveTo(cx, cy + size);
+    ctx.lineTo(cx - size * 0.85, cy - size * 0.65);
+    ctx.lineTo(cx + size * 0.85, cy - size * 0.65);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawInfoCard(ctx, x, y, w, h, label, value){
+  ctx.save();
+  ctx.shadowColor = 'rgba(15,32,39,0.08)';
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 6;
+  ctx.fillStyle = '#ffffff';
+  roundRect(ctx, x, y, w, h, 14);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.beginPath();
+  roundRect(ctx, x, y + 16, 5, h - 32, 3);
+  ctx.fillStyle = '#25D366';
+  ctx.fill();
+  ctx.restore();
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '800 12px "Segoe UI", Arial, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(label, x + 26, y + 34);
+
+  ctx.fillStyle = '#0f172a';
+  ctx.font = 'bold 26px "Segoe UI", Arial, sans-serif';
+  ctx.fillText(value, x + 26, y + 72);
+}
+
+/* ============================================================
+   رسم التقرير بالكامل
+============================================================ */
+function drawReport(){
+  const W = 900, H = 1130;
+  const scale = 2;
+  const canvas = $('reportCanvas');
+  canvas.width  = W * scale;
+  canvas.height = H * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+
+  /* الخلفية */
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#ffffff');
+  bg.addColorStop(1, '#f0fdf4');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  /* ===== الهيدر ===== */
+  const headerH = 200;
+  const hg = ctx.createLinearGradient(0, 0, W, headerH);
+  hg.addColorStop(0, '#0b3d2e');
+  hg.addColorStop(0.5, '#128C7E');
+  hg.addColorStop(1, '#25D366');
+  ctx.fillStyle = hg;
+  ctx.fillRect(0, 0, W, headerH);
+
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(W - 60, 30, 170, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(40, headerH - 10, 110, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // شعار دائري
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(W/2, 62, 34, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 32px "Segoe UI", Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('T', W/2, 64);
+  ctx.restore();
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 46px "Segoe UI", Arial, sans-serif';
+  ctx.fillText('Al-Tuba Oil Depot', W/2, 152);
+
+  /* ===== بطاقات الوقت والتاريخ ===== */
+  const infoY = 238;
+  const cardW = 380;
+  const cardH = 100;
+  drawInfoCard(ctx, 70, infoY, cardW, cardH, 'TIME', getTimeStr());
+  drawInfoCard(ctx, W - 70 - cardW, infoY, cardW, cardH, 'DATE', getDateStr());
+
+  /* ===== الجدول ===== */
+  const tblX = 70;
+  const tblW = W - 140;
+  const tblY = 400;
+  const headH = 64;
+  const rowH  = 82;
+  const footH = 96;
+  const tblH  = headH + rowH * 4 + footH;
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(15,32,39,0.12)';
+  ctx.shadowBlur = 34;
+  ctx.shadowOffsetY = 12;
+  ctx.fillStyle = '#ffffff';
+  roundRect(ctx, tblX, tblY, tblW, tblH, 16);
+  ctx.fill();
+  ctx.restore();
+
+  /* رأس الجدول */
+  ctx.save();
+  ctx.beginPath();
+  roundRectTop(ctx, tblX, tblY, tblW, headH, 16);
+  ctx.clip();
+  const hg2 = ctx.createLinearGradient(0, tblY, 0, tblY + headH);
+  hg2.addColorStop(0, '#0f5132');
+  hg2.addColorStop(1, '#128C7E');
+  ctx.fillStyle = hg2;
+  ctx.fillRect(tblX, tblY, tblW, headH);
+  ctx.restore();
+
+  const colItem  = tblX + 42;
+  const colAvail = tblX + tblW * 0.56;
+  const colFree  = tblX + tblW * 0.83;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '800 17px "Segoe UI", Arial, sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  ctx.fillText('ITEM', colItem, tblY + headH/2 + 1);
+  ctx.textAlign = 'center';
+  ctx.fillText('AVAIL', colAvail, tblY + headH/2 + 1);
+  ctx.fillText('FREE',  colFree,  tblY + headH/2 + 1);
+
+  /* صفوف البيانات */
+  const items = [
+    { name: 'Tuba',  avail: num('tx'),  free: num('tv'),  key: 'tuba' },
+    { name: 'PS.1',  avail: num('px'),  free: num('pv'),  key: 'ps1'  },
+    { name: 'zub.1', avail: num('z1x'), free: num('z1v'), key: 'zub1' },
+    { name: 'zub.2', avail: num('z2x'), free: num('z2v'), key: 'zub2' }
+  ];
+
+  items.forEach((item, i) => {
+    const ry = tblY + headH + i * rowH;
+
+    // خلفية متناوبة
+    ctx.fillStyle = i % 2 === 0 ? '#f8fafc' : '#ffffff';
+    ctx.fillRect(tblX, ry, tblW, rowH);
+
+    // شريط أخضر جانبي
+    ctx.fillStyle = '#25D366';
+    ctx.fillRect(tblX, ry, 5, rowH);
+
+    // خط فاصل
+    if (i > 0){
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(tblX + 24, ry);
+      ctx.lineTo(tblX + tblW - 24, ry);
+      ctx.stroke();
+    }
+
+    // اسم العنصر
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 22px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(item.name, colItem, ry + rowH/2);
+
+    // قيمة AVAIL
+    const availText = fmt(item.avail);
+    ctx.fillStyle = '#0f5132';
+    ctx.font = 'bold 30px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(availText, colAvail, ry + rowH/2);
+
+    // سهم الاتجاه أمام النتيجة (AVAIL)
+    const dir = trends[item.key];
+    if (dir){
+      const tw = ctx.measureText(availText).width;
+      const ax = colAvail - tw / 2 - 26;
+      drawTrendArrow(
+        ctx, ax, ry + rowH/2, 11, dir,
+        dir === 'up' ? COLOR_UP : COLOR_DOWN
+      );
+    }
+
+    // قيمة FREE
+    ctx.fillStyle = '#0369a1';
+    ctx.font = 'bold 30px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(fmt(item.free), colFree, ry + rowH/2);
+  });
+
+  /* صف المجموع */
+  const totY = tblY + headH + 4 * rowH;
+
+  ctx.save();
+  ctx.beginPath();
+  roundRectBottom(ctx, tblX, totY, tblW, footH, 16);
+  ctx.clip();
+  const tg = ctx.createLinearGradient(0, totY, 0, totY + footH);
+  tg.addColorStop(0, '#ecfdf5');
+  tg.addColorStop(1, '#d1fae5');
+  ctx.fillStyle = tg;
+  ctx.fillRect(tblX, totY, tblW, footH);
+  ctx.restore();
+
+  ctx.strokeStyle = '#a7f3d0';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(tblX, totY);
+  ctx.lineTo(tblX + tblW, totY);
+  ctx.stroke();
+
+  const { s, d } = totals();
+
+  ctx.fillStyle = '#065f46';
+  ctx.font = '900 26px "Segoe UI", Arial, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('TOTAL', colItem, totY + footH/2);
+
+  // قيمة المجموع AVAIL
+  const totalAvailText = fmt(s);
+  ctx.textAlign = 'center';
+  ctx.font = '900 32px "Segoe UI", Arial, sans-serif';
+  ctx.fillText(totalAvailText, colAvail, totY + footH/2);
+
+  // سهم الاتجاه أمام المجموع
+  if (trends.total){
+    const tw = ctx.measureText(totalAvailText).width;
+    const ax = colAvail - tw / 2 - 30;
+    drawTrendArrow(
+      ctx, ax, totY + footH/2, 13, trends.total,
+      trends.total === 'up' ? COLOR_UP : COLOR_DOWN
+    );
+  }
+
+  // قيمة المجموع FREE
+  ctx.fillText(fmt(d), colFree, totY + footH/2);
+
+  /* ===== الفوتر ===== */
+  const ftY = totY + footH + 55;
+
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(tblX + 140, ftY);
+  ctx.lineTo(tblX + tblW - 140, ftY);
+  ctx.stroke();
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#334155';
+  ctx.font = 'italic 700 18px "Segoe UI", Arial, sans-serif';
+  ctx.fillText('Issued by the "Al-Tuba" Oil Depot', W/2, ftY + 42);
+
+  /* شعار تصميم أبو سجاد */
+  const badgeW = 260;
+  const badgeH = 52;
+  const badgeX = (W - badgeW) / 2;
+  const badgeY = ftY + 68;
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(180,83,9,0.35)';
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetY = 6;
+  const badgeGrad = ctx.createLinearGradient(badgeX, badgeY, badgeX + badgeW, badgeY + badgeH);
+  badgeGrad.addColorStop(0, '#b45309');
+  badgeGrad.addColorStop(0.5, '#f59e0b');
+  badgeGrad.addColorStop(1, '#fbbf24');
+  ctx.fillStyle = badgeGrad;
+  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.lineWidth = 1.2;
+  roundRect(ctx, badgeX + 3, badgeY + 3, badgeW - 6, badgeH - 6, (badgeH - 6) / 2);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.font = 'bold 16px "Segoe UI", Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('★', badgeX + 22, badgeY + badgeH/2 + 1);
+  ctx.fillText('★', badgeX + badgeW - 22, badgeY + badgeH/2 + 1);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 22px "Segoe UI", Tahoma, Arial, sans-serif';
+  ctx.shadowColor = 'rgba(120,53,15,0.6)';
+  ctx.shadowBlur = 4;
+  ctx.shadowOffsetY = 1;
+  ctx.fillText('تصميم أبو سجاد', W/2, badgeY + badgeH/2 + 2);
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  /* سطر التوليد */
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '500 12px "Segoe UI", Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  const stamp = new Date().toLocaleString('en-GB');
+  ctx.fillText('Generated automatically  •  ' + stamp, W/2, badgeY + badgeH + 30);
+}
+
+/* ============================================================
+   تحديث الواجهة
+============================================================ */
+let drawTimer;
+function scheduleDraw(){
+  clearTimeout(drawTimer);
+  drawTimer = setTimeout(() => {
+    updateTotals();
+    drawReport();
+  }, 80);
+}
+
+function updateTotals(){
+  const { s, d } = totals();
+  $('totalX').textContent = fmt(s);
+  $('totalV').textContent = fmt(d);
+}
+
+document.querySelectorAll('input[type=number]').forEach(el => {
+  el.addEventListener('input', scheduleDraw);
+});
+
+/* ============================================================
+   تحويل Canvas إلى ملف صورة
+============================================================ */
+function canvasToFile(){
+  return new Promise(resolve => {
+    const canvas = $('reportCanvas');
+    canvas.toBlob(blob => {
+      const file = new File([blob], 'al-tuba-report.png', { type: 'image/png' });
+      resolve({ blob, file });
+    }, 'image/png');
+  });
+}
+
+/* ============================================================
+   إرسال واتساب (صورة فقط بدون نص)
+============================================================ */
+async function sendWhatsApp(){
+  if (systemDisabled){
+    toast('النظام معطل — فعّله أولاً');
+    return;
+  }
+  if (autoTime) tick();
+  drawReport();
+
+  const { blob, file } = await canvasToFile();
+  const phone = $('phone').value.replace(/\D/g, '');
+
+  // 1) مشاركة مباشرة (الجوال) — صورة فقط
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      toast('تم إرسال الصورة ✓');
+      return;
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+    }
+  }
+
+  // 2) خطة بديلة للحاسوب
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'al-tuba-report-' + Date.now() + '.png';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1200);
+
+  toast('تم تنزيل الصورة — أرفقها في محادثة واتساب');
+
+  setTimeout(() => {
+    window.open('https://wa.me/' + phone, '_blank');
+  }, 700);
+}
+$('btnSend').addEventListener('click', sendWhatsApp);
+
+/* ============================================================
+   تنزيل الصورة
+============================================================ */
+$('btnDownload').addEventListener('click', async () => {
+  if (systemDisabled){ toast('النظام معطل'); return; }
+  drawReport();
+  const { blob } = await canvasToFile();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'al-tuba-report-' + Date.now() + '.png';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('تم تنزيل الصورة ✓');
+});
+
+/* ============================================================
+   مسح الكل
+============================================================ */
+$('btnClear').addEventListener('click', () => {
+  if (systemDisabled){ toast('النظام معطل'); return; }
+  document.querySelectorAll('input[type=number]').forEach(el => el.value = '');
+  trends.tuba = trends.ps1 = trends.zub1 = trends.zub2 = trends.total = null;
+  updateArrowsUI();
+  autoTime = true;
+  tick();
+  toast('تم مسح البيانات');
+});
+
+/* ============================================================
+   تعطيل / تفعيل النظام بكلمة مرور
+============================================================ */
+$('btnLock').addEventListener('click', () => {
+  const msg = systemDisabled
+    ? 'أدخل كلمة المرور لتفعيل النظام:'
+    : 'أدخل كلمة المرور لتعطيل النظام:';
+  const pass = prompt(msg);
+  if (pass === null) return;
+  if (pass !== PASSWORD){
+    toast('كلمة المرور غير صحيحة ✗');
+    return;
+  }
+  systemDisabled = !systemDisabled;
+  applyLockState();
+  toast(systemDisabled ? 'تم تعطيل النظام 🔒' : 'تم تفعيل النظام ✓');
+});
+
+function applyLockState(){
+  document.querySelectorAll('input, button').forEach(el => {
+    if (el.id === 'btnLock') return;
+    el.disabled = systemDisabled;
+  });
+  document.body.classList.toggle('locked', systemDisabled);
+  const b = $('btnLock');
+  b.textContent = systemDisabled ? '🔓 تفعيل النظام' : '🔒 تعطيل النظام';
+  b.classList.toggle('active-lock', systemDisabled);
+}
+
+/* ============================================================
+   إشعار
+============================================================ */
+let toastTimer;
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* ============================================================
+   التشغيل
+============================================================ */
+initArrows();
+updateArrowsUI();
+tick();
+setInterval(tick, 1000);
+updateTotals();
+drawReport();
+</script>
+</body>
+</html>
