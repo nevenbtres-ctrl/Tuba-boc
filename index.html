@@ -964,42 +964,6 @@ async function writeLockState(locked){
     }
   });
 })();
-
-/* إعادة تعريف applyLockState لضمان توافقها مع النسخة السحابية */
-function applyLockState(){
-  document.querySelectorAll('input, button').forEach(el => {
-    if (el.id === 'btnLock') return;
-    el.disabled = systemDisabled;
-  });
-  document.body.classList.toggle('locked', systemDisabled);
-  const b = document.getElementById('btnLock');
-  if (b){
-    b.textContent = systemDisabled ? '🔓 تفعيل النظام' : '🔒 تعطيل النظام';
-    b.classList.toggle('active-lock', systemDisabled);
-  }
-}
-
-/* قراءة الحالة عند التحميل */
-(async () => {
-  const locked = await readLockState();
-  if (locked !== null){
-    systemDisabled = locked;
-    applyLockState();
-  }
-})();
-
-/* مزامنة دورية كل 5 ثوانٍ */
-setInterval(async () => {
-  const locked = await readLockState();
-  if (locked === null) return;
-  if (locked !== systemDisabled){
-    systemDisabled = locked;
-    applyLockState();
-    toast(locked
-      ? '🔒 تم تعطيل النظام على جميع الأجهزة'
-      : '✓ تم تفعيل النظام');
-  }
-}, 5000);
 </script>
 </body>
 </html>
