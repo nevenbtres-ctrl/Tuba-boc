@@ -909,6 +909,97 @@ tick();
 setInterval(tick, 1000);
 updateTotals();
 drawReport();
+/* ============================================================
+   🔒 JSONBin — المزامنة السحابية للقفل على كل الأجهزة
+   ⚠️ استبدل القيمتين أدناه بمفتاحك و BIN ID
+============================================================ */
+const JSONBIN_KEY = $2a$10$DlFnwp4tClzgzrmu1h/4mu/8PmEuQSObUi32eznyYOufFRmwQVTWW;
+const JSONBIN_BIN = 6ab05bc7ffd5d160531d6ed7;
+
+async function readLockState(){
+  try {
+    const res = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN + '/latest', {
+      headers: { 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Meta': 'false' }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    return data.locked === true;
+  } catch(e) { console.error('readLockState:', e); return null; }
+}
+
+async function writeLockState(locked){
+  const res = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
+    body: JSON.stringify({ locked: locked })
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return true;
+}
+
+/* استبدال زر القفل القديم بنسخة سحابية */
+(function replaceLockButton(){
+  const old = document.getElementById('btnLock');
+  if (!old) return;
+  const fresh = old.cloneNode(true);
+  old.parentNode.replaceChild(fresh, old);
+  fresh.addEventListener('click', async () => {
+    const msg = systemDisabled
+      ? 'أدخل كلمة المرور لتفعيل النظام:'
+      : 'أدخل كلمة المرور لتعطيل النظام:';
+    const pass = prompt(msg);
+    if (pass === null) return;
+    if (pass !== 'osama'){ toast('كلمة المرور غير صحيحة ✗'); return; }
+    try {
+      const newState = !systemDisabled;
+      await writeLockState(newState);
+      systemDisabled = newState;
+      applyLockState();
+      toast(newState
+        ? 'تم تعطيل النظام على جميع الأجهزة 🔒'
+        : 'تم تفعيل النظام على جميع الأجهزة ✓');
+    } catch(err){
+      console.error(err);
+      toast('حدث خطأ في الاتصال بالسيرفر ✗');
+    }
+  });
+})();
+
+/* إعادة تعريف applyLockState لضمان توافقها مع النسخة السحابية */
+function applyLockState(){
+  document.querySelectorAll('input, button').forEach(el => {
+    if (el.id === 'btnLock') return;
+    el.disabled = systemDisabled;
+  });
+  document.body.classList.toggle('locked', systemDisabled);
+  const b = document.getElementById('btnLock');
+  if (b){
+    b.textContent = systemDisabled ? '🔓 تفعيل النظام' : '🔒 تعطيل النظام';
+    b.classList.toggle('active-lock', systemDisabled);
+  }
+}
+
+/* قراءة الحالة عند التحميل */
+(async () => {
+  const locked = await readLockState();
+  if (locked !== null){
+    systemDisabled = locked;
+    applyLockState();
+  }
+})();
+
+/* مزامنة دورية كل 5 ثوانٍ */
+setInterval(async () => {
+  const locked = await readLockState();
+  if (locked === null) return;
+  if (locked !== systemDisabled){
+    systemDisabled = locked;
+    applyLockState();
+    toast(locked
+      ? '🔒 تم تعطيل النظام على جميع الأجهزة'
+      : '✓ تم تفعيل النظام');
+  }
+}, 5000);
 </script>
 </body>
 </html>
